@@ -23,7 +23,7 @@ class CPU:
 
         # Instructions
         self.LDI = 0b10000010
-        self.MUL = 0b10100010
+        # self.MUL = 0b10100010
         self.PRN = 0b01000111
         self.PUSH = 0b01000101
         self.POP = 0b01000110
@@ -34,7 +34,7 @@ class CPU:
         self.CMP = 0b10100111
         self.JMP = 0b01010100
         self.JEQ = 0b01010101
-        
+        self.JNE = 0b01010110
         
 
         # Turning the branch table into a dictionary to be able to update easier
@@ -47,10 +47,9 @@ class CPU:
             self.HLT: self.halt,
             self.CALL: self.call,
             self.RET: self.ret,
-            # self.ADD: self.addition,
-            self.CMP: self.compare,
             self.JMP: self.jump,
-            self.JEQ: self.jump_equals
+            self.JEQ: self.jump_equals,
+            self.JNE: self.jump_not_equals
         }
         
 
@@ -87,11 +86,11 @@ class CPU:
        
         self.pc += 3
 
-    def compare(self, operand_a=None, operand_b=None):
-        num_reg_a = self.ram_read(self.pc + 1)
-        num_reg_b = self.ram_read(self.pc + 2)
-        self.alu('CMP', num_reg_a, num_reg_b)
-        self.pc += 3
+    # def compare(self, operand_a=None, operand_b=None):
+    #     num_reg_a = self.ram_read(self.pc + 1)
+    #     num_reg_b = self.ram_read(self.pc + 2)
+    #     self.alu(0b10100111, num_reg_a, num_reg_b)
+    #     self.pc += 3
 
     def prn(self, operand_a=None, operand_b=None):
         register_num = operand_a #self.ram_read(self.pc + 1) # operand_a (address)
@@ -152,9 +151,12 @@ class CPU:
         #set the pc so it knows where to return to
         self.pc = return_address
     
+    # Jump to the address stored in the given register.
+    # Set the PC to the address stored in the given register.
     def jump(self, operand_a=None, operand_b=None):
         self.pc = self.reg[operand_a]
     
+    # If equal flag is set (true), jump to the address stored in the given register.
     def jump_equals(self, operand_a=None, operand_b=None):
         # Jump to the address stored in the given register.
         # Set the PC to the address stored in the given register.
@@ -163,6 +165,12 @@ class CPU:
         else:
             self.pc += 2
 
+    # If E flag is clear (false, 0), jump to the address stored in the given register
+    def jump_not_equals(self, operand_a=None, operand_b=None):
+        if self.flag != 0b00000001:
+            self.pc = self.reg[operand_a]
+        else:   
+            self.pc += 2
 
     def halt(self, operand_a=None, operand_b=None):
         self.running = False
@@ -229,9 +237,12 @@ class CPU:
 
             # Checks the alu to see if 1 or 0, bit shifts left 6 places 
             use_alu = (IR & 0b00100000) >> 5
-
+            # If the alu is used 
             if use_alu:
+                # in the alu the instruction register
+                # then move to the specified function to be run
                 self.alu(IR, register_a, register_b)
+                #increment the program counter after
                 self.pc += 3
                 self.trace()
             # as the branchtable moves down the branchtable object, it will "get" the instruction key,
